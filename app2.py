@@ -14,15 +14,15 @@ st.set_page_config(
 # --- 2. TITLE & PROJECT OVERVIEW ---
 st.title("🇸🇦 Wadi Yalamlam Groundwater Potential Dashboard")
 st.markdown("""
-This interactive dashboard replicates the methodology of **Madani & Niyazi (2023)** to predict groundwater potential 
-in the Wadi Yalamlam basin, Saudi Arabia, using **Random Forest Machine Learning** and **Geospatial Analysis**.
+This interactive dashboard predicts groundwater potential in **Wadi Yalamlam, Saudi Arabia** 
+using Machine Learning (Random Forest) and Geospatial Analysis.
 """)
 
 # --- 3. DATA LOADING (CSV ONLY) ---
 @st.cache_data
 def load_data():
     try:
-        # Loading the data you exported from MySQL to CSV
+        # This reads the CSV file you uploaded to GitHub
         df = pd.read_csv("wadi_yalamlam_data.csv")
         return df
     except FileNotFoundError:
@@ -46,8 +46,6 @@ if df is not None:
 
     # --- 5. SIDEBAR: INTERACTIVE PREDICTION TOOL ---
     st.sidebar.header("🔍 Predict Groundwater Potential")
-    st.sidebar.markdown("Adjust the parameters below to see how the model predicts potential for a new location.")
-    
     dist_input = st.sidebar.slider("Distance to Fault (meters)", 0, 5000, 500)
     lith_input = st.sidebar.selectbox("Select Lithology (Rock Type)", df['lithology'].unique())
     
@@ -77,18 +75,14 @@ if df is not None:
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
         
         # A. DRAW THE FAULT LINE (Representative of the Wadi's geological structure)
-        fault_coords = [
-            [21.15, 39.85], 
-            [21.05, 39.80], 
-            [20.95, 39.75]
-        ]
+        fault_coords = [[21.15, 39.85], [21.05, 39.80], [20.95, 39.75]]
         folium.PolyLine(
             fault_coords, 
             color="black", 
             weight=4, 
             opacity=0.8, 
             dash_array='10',
-            tooltip="Major Fault Line (Tectonic Fracture)"
+            tooltip="Major Fault Line"
         ).add_to(m)
 
         # B. DRAW THE WELL POINTS
@@ -118,7 +112,7 @@ if df is not None:
 
     with col2:
         st.subheader("📊 Data Insights")
-        st.write("Summary of well characteristics in the study area:")
+        st.write("Summary of well characteristics:")
         st.write(df[['potential_category', 'lithology', 'distance_to_fault']].describe())
         
         st.markdown("**Distribution of Potential Categories:**")
