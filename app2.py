@@ -3,6 +3,7 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 from sklearn.ensemble import RandomForestClassifier
+import os
 
 # --- 1. PAGE CONFIGURATION ---
 st.set_page_config(
@@ -18,15 +19,20 @@ This interactive dashboard predicts groundwater potential in **Wadi Yalamlam, Sa
 using Machine Learning (Random Forest) and Geospatial Analysis.
 """)
 
-# --- 3. DATA LOADING (CSV ONLY) ---
+# --- 3. DATA LOADING (WITH FILE CHECKER) ---
 @st.cache_data
 def load_data():
-    try:
-        # This reads the CSV file you uploaded to GitHub
-        df = pd.read_csv("wadi_yalamlam_data.csv")
-        return df
-    except FileNotFoundError:
-        st.error("❌ Error: 'wadi_yalamlam_data.csv' not found. Please ensure the file is in the same folder.")
+    file_name = "wadi_yalamlam_data.csv"
+    
+    # Check if the file exists on the server
+    if os.path.exists(file_name):
+        return pd.read_csv(file_name)
+    else:
+        st.error(f"❌ Error: '{file_name}' not found on GitHub!")
+        st.write("### 🔍 Debugging Info for the Server:")
+        st.write(f"Current Directory: `{os.getcwd()}`")
+        st.write("Files visible to the server:", os.listdir("."))
+        st.info("💡 Tip: Make sure your CSV file is named exactly 'wadi_yalamlam_data.csv' and is in the same folder as this script.")
         return None
 
 df = load_data()
@@ -51,7 +57,7 @@ if df is not None:
     
     # Prepare input for prediction
     input_data = pd.DataFrame(columns=X.columns)
-    input_data.loc[0] = 0 # Initialize with zeros
+    input_data.loc[0] = 0 
     input_data['distance_to_fault'] = dist_input
     if f'lithology_{lith_input}' in input_data.columns:
         input_data[f'lithology_{lith_input}'] = 1
@@ -74,21 +80,13 @@ if df is not None:
         # Create the base map centered on the data
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
         
-        # A. DRAW THE FAULT LINE (Representative of the Wadi's geological structure)
+        # A. DRAW THE FAULT LINE
         fault_coords = [[21.15, 39.85], [21.05, 39.80], [20.95, 39.75]]
-        folium.PolyLine(
-            fault_coords, 
-            color="black", 
-            weight=4, 
-            opacity=0.8, 
-            dash_array='10',
-            tooltip="Major Fault Line"
-        ).add_to(m)
+        folium.PolyLine(fault_coords, color="black", weight=4, opacity=0.8, dash_array='10').add_to(m)
 
         # B. DRAW THE WELL POINTS
         colors = {'High': 'green', 'Moderate': 'orange', 'Low': 'red'}
         for _, row in df.iterrows():
-            # Using triple quotes for a safe, multi-line popup
             popup_content = f"""
             <b>Well ID:</b> {row['point_id']}  
 
